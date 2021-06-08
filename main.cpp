@@ -1,6 +1,7 @@
 #include <cassert>
 #include <string>
 #include <stdexcept>
+#include <tuple>
 
 using namespace std::string_literals;
 
@@ -15,42 +16,89 @@ void assert_equal__(const T& actual, const T& expected, const char* file, int li
 
 #define assert_equal(actual, expected) (assert_equal__(actual, expected, __FILE__, __LINE__))
 
-void it(const char* title, void (*test)())
+struct it__
 {
-    auto good = true;
-    auto reason = "Uncaught exception";
+    void operator()(const char* title, void (*test)())
+    {
+        auto good = true;
+        auto reason = "Uncaught exception";
 
-    try
-    {
-        test();
-    }
-    catch (const std::exception& ex)
-    {
-        reason = ex.what();
-        good = false;
-    }
-    catch (...)
-    {
-        good = false;
+        try
+        {
+            test();
+        }
+        catch (const std::exception& ex)
+        {
+            reason = ex.what();
+            good = false;
+        }
+        catch (...)
+        {
+            good = false;
+        }
+
+        if (good)
+        {
+            std::printf("[\e[0;32mPASSED\e[0m] %s\n", title);
+
+        }
+        else
+        {
+            std::printf("[\e[0;31mFAILED\e[0m] %s\n\n    %s\n", title, reason);
+
+        }
     }
 
-    if (good)
+    template<typename T>
+    void each(std::initializer_list<T> elements, const char* title, void (*test)(const T&))
     {
-        std::printf("[\e[0;32mPASSED\e[0m] %s\n", title);
+        for (const auto& element : elements)
+        {
+            auto good = true;
+            auto reason = "Uncaught exception";
 
-    }
-    else
-    {
-        std::printf("[\e[0;31mFAILED\e[0m] %s\n\n    %s\n", title, reason);
+            try
+            {
+                test(element);
+            }
+            catch (const std::exception& ex)
+            {
+                reason = ex.what();
+                good = false;
+            }
+            catch (...)
+            {
+                good = false;
+            }
 
+            if (good)
+            {
+                std::printf("[\e[0;32mPASSED\e[0m] %s\n", title);
+
+            }
+            else
+            {
+                std::printf("[\e[0;31mFAILED\e[0m] %s\n\n    %s\n\n", title, reason);
+            }
+        }
     }
-}
+} it;
 
 int main()
 {
-    it("should calculate 2 + 2", []
+    struct calculation_data
     {
-        assert_equal(2 + 2, 4);
+        int input_a;
+        int input_b;
+        int expected;
+    };
+
+    it.each<calculation_data>({
+        {2, 2, 4},
+        {2, 3, 5},
+    }, "should calculate", [] (auto _)
+    {
+        assert_equal(_.input_a + _.input_b, _.expected);
     });
 
     it("should fail on 2 + 3", []

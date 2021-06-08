@@ -37,16 +37,7 @@ struct it__
             good = false;
         }
 
-        if (good)
-        {
-            std::printf("[\e[0;32mPASSED\e[0m] %s\n", title);
-
-        }
-        else
-        {
-            std::printf("[\e[0;31mFAILED\e[0m] %s\n\n    %s\n", title, reason);
-
-        }
+        print_result(good, title, reason);
     }
 
     template<typename T>
@@ -71,15 +62,20 @@ struct it__
                 good = false;
             }
 
-            if (good)
-            {
-                std::printf("[\e[0;32mPASSED\e[0m] %s\n", title);
+            print_result(good, title, reason);
+        }
+    }
 
-            }
-            else
-            {
-                std::printf("[\e[0;31mFAILED\e[0m] %s\n\n    %s\n\n", title, reason);
-            }
+private:
+    void print_result(bool good, const char* title, const char* reason)
+    {
+        if (good)
+        {
+            std::printf("[\e[0;32mPASSED\e[0m] %s\n", title);
+        }
+        else
+        {
+            std::printf("[\e[0;31mFAILED\e[0m] %s\n\n    %s\n\n", title, reason);
         }
     }
 } it;

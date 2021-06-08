@@ -40,17 +40,17 @@ struct it__
         print_result(good, title, reason);
     }
 
-    template<typename T>
-    void each(std::initializer_list<T> elements, const char* title, void (*test)(const T&))
+    template<typename F, typename ...Ts>
+    void each(std::initializer_list<std::tuple<Ts...>> tuples, const char* pattern, F&& test)
     {
-        for (const auto& element : elements)
+        for (const auto& tuple : tuples)
         {
             auto good = true;
             auto reason = "Uncaught exception";
 
             try
             {
-                test(element);
+                std::apply(test, tuple);
             }
             catch (const std::exception& ex)
             {
@@ -61,6 +61,10 @@ struct it__
             {
                 good = false;
             }
+
+            char title[1024];
+
+            std::apply([&title, pattern] (auto... elements) { snprintf(title, 1024, pattern, elements...); }, tuple);
 
             print_result(good, title, reason);
         }
@@ -82,19 +86,12 @@ private:
 
 int main()
 {
-    struct calculation_data
+    it.each({
+        std::make_tuple(2, 2, 4),
+        std::make_tuple(2, 3, 5),
+    }, "should calculate %d + %d = %d", [] (auto input_a, auto input_b, auto expected)
     {
-        int input_a;
-        int input_b;
-        int expected;
-    };
-
-    it.each<calculation_data>({
-        {2, 2, 4},
-        {2, 3, 5},
-    }, "should calculate", [] (auto _)
-    {
-        assert_equal(_.input_a + _.input_b, _.expected);
+        assert_equal(input_a + input_b, expected);
     });
 
     it("should fail on 2 + 3", []
